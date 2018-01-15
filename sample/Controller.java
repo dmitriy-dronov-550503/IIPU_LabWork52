@@ -10,6 +10,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import sample.model.Device;
+import sample.model.LSHWDevice;
+
+import javax.swing.*;
 
 public class Controller {
 
@@ -20,7 +23,7 @@ public class Controller {
     sample.manager.DeviceManager dm = new sample.manager.DeviceManager();
     final ObservableList<Device> data = FXCollections.observableArrayList(dm.findDevices());
 
-
+    private TreeView<LSHWDevice> tree = new TreeView<>(dm.getRoot());
 
     void init(){
 
@@ -76,12 +79,17 @@ public class Controller {
         bottomPanel.setSpacing(4.0);
         bottomPanel.getChildren().addAll(unbindButton, bindButton);
 
-        AnchorPane.setBottomAnchor(table, 26.0);
+        /*AnchorPane.setBottomAnchor(table, 26.0);
         AnchorPane.setLeftAnchor(table,0.0);
         AnchorPane.setRightAnchor(table, 0.0);
-        AnchorPane.setTopAnchor(table,0.0);
+        AnchorPane.setTopAnchor(table,0.0);*/
+        AnchorPane.setBottomAnchor(tree, 26.0);
+        AnchorPane.setLeftAnchor(tree,0.0);
+        AnchorPane.setRightAnchor(tree, 0.0);
+        AnchorPane.setTopAnchor(tree,0.0);
 
-        root.getChildren().addAll(table, bottomPanel);
+        //root.getChildren().addAll(table, bottomPanel);
+        root.getChildren().addAll(tree, bottomPanel);
         return root;
     }
 

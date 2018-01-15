@@ -7,13 +7,33 @@ import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LSHWDevice {
-    private String businfo;
-    private String serial;
+    private String id;
+    private String handle;
+    private String description;
     private String product;
     private String vendor;
-    private String description;
+    private String businfo;
+    private String serial;
     private LSHWConfiguration configuration;
     private List<LSHWDevice> children;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getHandle() {
+        return handle;
+    }
+
+    public void setHandle(String handle) {
+        this.handle = handle;
+    }
+
+
     private String GUID;
 
     public String getBusinfo() {
@@ -86,13 +106,10 @@ public class LSHWDevice {
 
     @Override
     public String toString() {
-        return "LSHWDevice{" +
-                "businfo='" + businfo + '\'' +
-                ", serial='" + serial + '\'' +
-                ", product='" + product + '\'' +
-                ", vendor='" + vendor + '\'' +
-                ", configuration=" + configuration +
-                ", children=" + children +
-                '}';
+        return (product==null?"":product+" | ") +
+                (description==null?"":description+" | ") +
+                (vendor==null?"":vendor+" | ") +
+                (id==null?"":id+"  ")
+                ;
     }
 }

@@ -1,14 +1,15 @@
 package sample.manager;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.scene.control.TreeItem;
+import sample.SudoExecutor;
 import sample.model.Device;
 import sample.model.LSHWDevice;
+import sun.reflect.generics.tree.Tree;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DeviceManager {
+
+    private TreeItem<LSHWDevice> root = new TreeItem<>();
+
+    public TreeItem<LSHWDevice> getRoot(){
+        return root;
+    }
 
     public static void main(String[] args) throws Exception {
         List<Device> devices = new DeviceManager().findDevices();
@@ -28,7 +35,12 @@ public class DeviceManager {
     public List<Device> findDevices() {
         List<Device> devices = new ArrayList<>();
         try {
-            Process lshwProcess = Runtime.getRuntime().exec(new String[] {"lshw", "-json"});
+            SudoExecutor.prepareScript("lshw","lshw -json");
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            String appDirectory = System.getProperty("user.dir")+"/src/sample";
+            processBuilder.command("gksudo","bash", appDirectory+"/"+"lshw"+".sh");
+            processBuilder.directory(new File(appDirectory));
+            Process lshwProcess = processBuilder.start();
             try {
                 lshwProcess.waitFor();
                 ObjectMapper mapper = new ObjectMapper();
@@ -41,6 +53,10 @@ public class DeviceManager {
                     builder.append(line);
                 }
                 LSHWDevice lshwDevice = mapper.readValue(builder.toString(), LSHWDevice.class);
+                //
+                parseTree(lshwDevice, root, "  ");
+                outTree(root, "  ");
+                //
                 lineraizeDevice(lshwDevice, devices);
             } catch (Exception e1) {
                 e1.printStackTrace();
@@ -49,6 +65,37 @@ public class DeviceManager {
             e.printStackTrace();
         }
         return devices;
+    }
+
+    private void parseTree(LSHWDevice lshwDevice, TreeItem<LSHWDevice> root, String spaces){
+        TreeItem<LSHWDevice> item = new TreeItem<>(lshwDevice);
+        if(lshwDevice.getChildren()!=null){
+            for (LSHWDevice device:
+                    lshwDevice.getChildren()) {
+                parseTree(device, item, spaces+"  ");
+            }
+        }
+        root.getChildren().add(item);
+    }
+
+    /*private void outList(LSHWDevice lshwDevice, String spaces){
+        System.out.println(spaces+lshwDevice.getDescription());
+        if(lshwDevice.getChildren()!=null){
+            for (LSHWDevice device:
+                    lshwDevice.getChildren()) {
+                outList(device, spaces+"  ");
+            }
+        }
+    }*/
+
+    private void outTree(TreeItem<LSHWDevice> root, String spaces){
+        System.out.println(spaces+root.getValue());
+        if(root.getChildren()!=null){
+            for (TreeItem<LSHWDevice> item:
+                    root.getChildren()) {
+                outTree(item, spaces+"  ");
+            }
+        }
     }
 
     private List<Device> lineraizeDevice(LSHWDevice lshwDevice, List<Device> devices) {
@@ -64,55 +111,53 @@ public class DeviceManager {
         return devices;
     }
 
+
     private Device convertDevice(LSHWDevice lshwDevice) {
         String busInfo = lshwDevice.getBusinfo();
-        if (busInfo == null) return null;
         Device device = new Device();
-        Pattern pattern = Pattern.compile("([^@]+)@([^@,]+)");
-        Matcher matcher = pattern.matcher(busInfo);
-        matcher.find();
-        String busName = matcher.group(1);
-        String busPath = matcher.group(2);
-        String deviceFolder = "/sys/bus";
-        String deviceName = null;
-        if ("pci".equals(busName)) {
-            deviceFolder += "/pci/devices/" + busPath;
-            try{
-                for(int i=0; i<10; i++){
-                    System.out.println("Matcher "+i+" "+matcher.group(i));
+        String deviceFolder = "";
+        String busName = "";
+        String deviceName = "";
+        if (busInfo != null) {
+            Pattern pattern = Pattern.compile("([^@]+)@([^@,]+)");
+            Matcher matcher = pattern.matcher(busInfo);
+            matcher.find();
+            busName = matcher.group(1);
+            String busPath = matcher.group(2);
+            deviceFolder = "/sys/bus";
+            deviceName = null;
+            if ("pci".equals(busName)) {
+                deviceFolder += "/pci/devices/" + busPath;
+                device.setDeviceDriverName(busPath);
+            } else if ("usb".equals(busName)) {
+                deviceFolder += "/usb/devices/";
+                Pattern usbPathPattern = Pattern.compile("(\\d+)(:(\\d+))?");
+                Matcher usbPathMatcher = usbPathPattern.matcher(busPath);
+                usbPathMatcher.find();
+                if (usbPathMatcher.group(3) != null) {
+                    deviceName = usbPathMatcher.group(1) + "-" + usbPathMatcher.group(3);
+                    device.setDeviceDriverName(deviceName);
+                    deviceFolder += deviceName;
+                } else {
+                    deviceName = "usb" + usbPathMatcher.group(1);
+                    device.setDeviceDriverName(deviceName);
+                    deviceFolder += deviceName;
+                }
+            } else if ("scsi".equals(busName)) {
+                if (busInfo.contains(",")) {
+                    return null;
+                }
+                device.setDeviceDriverName(busPath.replace('.', ':'));
+                deviceFolder += "/scsi/devices/" + busPath.replace('.', ':');
+            } else {
+                if ("cpu".equals(busName)) {
+                    deviceFolder += "cpu/devices/" + busPath;
                 }
             }
-            catch(Exception ex){
-
-            }
-
-            device.setDeviceDriverName(busPath);
-        } else if ("usb".equals(busName)) {
-            deviceFolder += "/usb/devices/";
-            Pattern usbPathPattern = Pattern.compile("(\\d+)(:(\\d+))?");
-            Matcher usbPathMatcher = usbPathPattern.matcher(busPath);
-            usbPathMatcher.find();
-            if (usbPathMatcher.group(3) != null) {
-                deviceName = usbPathMatcher.group(1) + "-" + usbPathMatcher.group(3);
-                device.setDeviceDriverName(deviceName);
-                deviceFolder += deviceName;
-            } else {
-                deviceName = "usb" + usbPathMatcher.group(1);
-                device.setDeviceDriverName(deviceName);
-                deviceFolder += deviceName;
-            }
-        } else if ("scsi".equals(busName)) {
-            if (busInfo.contains(",")) {
-                return null;
-            }
-            device.setDeviceDriverName(busPath.replace('.', ':'));
-            deviceFolder += "/scsi/devices/" + busPath.replace('.', ':');
-        } else {
-            if ("cpu".equals(busName)) {
-                deviceFolder += "cpu/devices/" + busPath;
-            }
+            device.setDevicePath(deviceFolder);
+        }else{
+            device.setDeviceName("NONE");
         }
-        device.setDevicePath(deviceFolder);
 
         try {
             device.setDriverFolder(FileSystems
@@ -134,6 +179,7 @@ public class DeviceManager {
             }
         }
         device.setDeviceName(lshwDevice.getProduct());
+        if(lshwDevice.getProduct()==null) device.setDeviceName(lshwDevice.getDescription());
         device.setDescription(lshwDevice.getDescription());
         device.setManufacturer(lshwDevice.getVendor());
         device.setGUID(lshwDevice.getGUID());
