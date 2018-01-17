@@ -63,15 +63,6 @@ public class Controller {
         root.setBottom(bottomPanel);
 
         return root;
-
-        /*
-        AnchorPane.setBottomAnchor(topPanel, 26.0);
-        AnchorPane.setLeftAnchor(topPanel,0.0);
-        AnchorPane.setRightAnchor(topPanel, 0.0);
-        AnchorPane.setTopAnchor(topPanel,0.0);
-
-        root.getChildren().addAll(topPanel, bottomPanel);
-        return root;*/
     }
 
     private void initUnbindButton(){
