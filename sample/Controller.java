@@ -17,56 +17,16 @@ import javax.swing.*;
 public class Controller {
 
     AnchorPane root = new AnchorPane();
-    private TableView<Device> table = new TableView<Device>();
     private Button unbindButton = new Button("Unbind");
     private Button bindButton = new Button("Bind");
     sample.manager.DeviceManager dm = new sample.manager.DeviceManager();
     final ObservableList<Device> data = FXCollections.observableArrayList(dm.findDevices());
-
-    private TreeView<LSHWDevice> tree = new TreeView<>(dm.getRoot());
+    private TreeView<LSHWDevice> tree = new TreeView<>(dm.getRoot().getChildren().get(0));
 
     void init(){
-
-        /*try {
-            parseCommand();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
-        TableColumn slotCol = new TableColumn("Slot");
-        slotCol.setMinWidth(50);
-        slotCol.prefWidthProperty().bind(table.widthProperty().divide(11));
-        slotCol.setCellValueFactory(
-                new PropertyValueFactory<Device, String>("deviceDriverName"));
-
-        TableColumn nameCol = new TableColumn("Name");
-        nameCol.prefWidthProperty().bind(table.widthProperty().divide(3.6));
-        nameCol.setCellValueFactory(
-                new PropertyValueFactory<Device, String>("deviceName"));
-
-        TableColumn classCol = new TableColumn("GUID");
-        classCol.prefWidthProperty().bind(table.widthProperty().divide(4.75));
-        classCol.setCellValueFactory(
-                new PropertyValueFactory<Device, String>("GUID"));
-
-        TableColumn vendorCol = new TableColumn("Vendor");
-        vendorCol.prefWidthProperty().bind(table.widthProperty().divide(4.75));
-        vendorCol.setCellValueFactory(
-                new PropertyValueFactory<Device, String>("manufacturer"));
-
-        TableColumn pathCol = new TableColumn("Path");
-        pathCol.prefWidthProperty().bind(table.widthProperty().divide(4.75));
-        pathCol.setCellValueFactory(
-                new PropertyValueFactory<Device, String>("driverFolder"));
-
-
-        table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        table.setItems(data);
-        table.getColumns().addAll(slotCol, nameCol, classCol, vendorCol, pathCol);
-
+        tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         initUnbindButton();
         initBindButton();
-
     }
 
     void stop(){
@@ -79,16 +39,11 @@ public class Controller {
         bottomPanel.setSpacing(4.0);
         bottomPanel.getChildren().addAll(unbindButton, bindButton);
 
-        /*AnchorPane.setBottomAnchor(table, 26.0);
-        AnchorPane.setLeftAnchor(table,0.0);
-        AnchorPane.setRightAnchor(table, 0.0);
-        AnchorPane.setTopAnchor(table,0.0);*/
         AnchorPane.setBottomAnchor(tree, 26.0);
         AnchorPane.setLeftAnchor(tree,0.0);
         AnchorPane.setRightAnchor(tree, 0.0);
         AnchorPane.setTopAnchor(tree,0.0);
 
-        //root.getChildren().addAll(table, bottomPanel);
         root.getChildren().addAll(tree, bottomPanel);
         return root;
     }
@@ -97,14 +52,14 @@ public class Controller {
         unbindButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                for (TablePosition pos:
-                        table.getSelectionModel().getSelectedCells()) {
-                    String slot = table.getItems().get(pos.getRow()).getDeviceDriverName();
-                    String path = table.getItems().get(pos.getRow()).getDriverFolder();
-                    String appDirectory = System.getProperty("user.dir")+"/src/sample";
+                for (TreeItem<LSHWDevice> item:
+                     tree.getSelectionModel().getSelectedItems()) {
+                    String slot = item.getValue().getSlot();
+                    String path = item.getValue().getDriverPath();
+                    String command = "echo "+slot+" | tee -a "+path+"/unbind";
+                    System.out.println(command);
                     try {
-                        BindManager bindManager = new BindManager(slot, path);
-                        bindManager.unbind();
+                        SudoExecutor.exec("unbind",command);
                     }
                     catch (Exception ex){
                         ex.printStackTrace();
@@ -118,14 +73,14 @@ public class Controller {
         bindButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                for (TablePosition pos:
-                        table.getSelectionModel().getSelectedCells()) {
-                    String slot = table.getItems().get(pos.getRow()).getDeviceDriverName();
-                    String path = table.getItems().get(pos.getRow()).getDriverFolder();
-                    String appDirectory = System.getProperty("user.dir")+"/src/sample";
+                for (TreeItem<LSHWDevice> item:
+                        tree.getSelectionModel().getSelectedItems()) {
+                    String slot = item.getValue().getSlot();
+                    String path = item.getValue().getDriverPath();
+                    String command = "echo "+slot+" | tee -a "+path+"/bind";
+                    System.out.println(command);
                     try {
-                        BindManager bindManager = new BindManager(slot, path);
-                        bindManager.bind();
+                        SudoExecutor.exec("bind",command);
                     }
                     catch (Exception ex){
                         ex.printStackTrace();

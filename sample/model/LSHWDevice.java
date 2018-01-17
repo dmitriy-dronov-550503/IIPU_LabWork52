@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LSHWDevice {
@@ -33,9 +35,6 @@ public class LSHWDevice {
         this.handle = handle;
     }
 
-
-    private String GUID;
-
     public String getBusinfo() {
         return businfo;
     }
@@ -64,10 +63,6 @@ public class LSHWDevice {
         return vendor;
     }
 
-    public String getGUID() {
-        return GUID;
-    }
-
     public void setVendor(String vendor) {
         this.vendor = vendor;
     }
@@ -88,10 +83,6 @@ public class LSHWDevice {
         return configuration;
     }
 
-    public LSHWDevice() {
-        GUID = UUID.randomUUID().toString();
-    }
-
     public void setConfiguration(LSHWConfiguration configuration) {
         this.configuration = configuration;
     }
@@ -104,12 +95,45 @@ public class LSHWDevice {
         this.description = description;
     }
 
+    public String getSlot(){
+        String result = "[none information]";
+        if(businfo!=null){
+            try {
+                Pattern pci = Pattern.compile("(?<=pci@)(.*)");
+                Pattern scsi = Pattern.compile("(?<=scsi@)(.*)");
+                Matcher matcher = pci.matcher(businfo);
+                if (matcher.find()) {
+                    result = matcher.group(1);
+                } else {
+                    matcher = scsi.matcher(businfo);
+                    if (matcher.find()) {
+                        result = matcher.group(1).replace('.',':');
+                    }
+                }
+            }
+            catch (Exception ex){
+                ex.printStackTrace();
+            }
+        }
+        return result;
+
+    }
+
+    public String getDriverPath(){
+        if(businfo!=null) {
+            if (businfo.contains("pci")) return "/sys/bus/pci/drivers/"+getDriverName();
+            if (businfo.contains("scsi")) return "/sys/bus/scsi/drivers/sr";
+        }
+        return businfo;
+    }
+
     @Override
     public String toString() {
         return (product==null?"":product+" | ") +
                 (description==null?"":description+" | ") +
                 (vendor==null?"":vendor+" | ") +
-                (id==null?"":id+"  ")
+                (id==null?"":id+" | ") +
+                (businfo==null?"":businfo)
                 ;
     }
 }

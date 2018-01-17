@@ -43,8 +43,6 @@ public class DeviceManager {
             Process lshwProcess = processBuilder.start();
             try {
                 lshwProcess.waitFor();
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
                 BufferedReader br = new BufferedReader(new InputStreamReader(lshwProcess.getInputStream()));
                 String line = br.readLine();
                 StringBuilder builder = new StringBuilder(line);
@@ -52,9 +50,11 @@ public class DeviceManager {
                     line = br.readLine();
                     builder.append(line);
                 }
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, false);
                 LSHWDevice lshwDevice = mapper.readValue(builder.toString(), LSHWDevice.class);
                 //
-                parseTree(lshwDevice, root, "  ");
+                parseTree(lshwDevice, root);
                 outTree(root, "  ");
                 //
                 lineraizeDevice(lshwDevice, devices);
@@ -67,12 +67,12 @@ public class DeviceManager {
         return devices;
     }
 
-    private void parseTree(LSHWDevice lshwDevice, TreeItem<LSHWDevice> root, String spaces){
+    private void parseTree(LSHWDevice lshwDevice, TreeItem<LSHWDevice> root){
         TreeItem<LSHWDevice> item = new TreeItem<>(lshwDevice);
         if(lshwDevice.getChildren()!=null){
             for (LSHWDevice device:
                     lshwDevice.getChildren()) {
-                parseTree(device, item, spaces+"  ");
+                parseTree(device, item);
             }
         }
         root.getChildren().add(item);
@@ -182,7 +182,6 @@ public class DeviceManager {
         if(lshwDevice.getProduct()==null) device.setDeviceName(lshwDevice.getDescription());
         device.setDescription(lshwDevice.getDescription());
         device.setManufacturer(lshwDevice.getVendor());
-        device.setGUID(lshwDevice.getGUID());
         return device;
     }
 
