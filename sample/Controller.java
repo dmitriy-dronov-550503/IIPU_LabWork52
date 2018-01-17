@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
@@ -27,7 +26,7 @@ public class Controller {
     private ObservableList<String> configurationList;
 
     void init(){
-        tree.setOnKeyPressed(e -> treeItemSelectedAction());
+        tree.setOnKeyReleased(e -> treeItemSelectedAction());
         tree.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -94,6 +93,7 @@ public class Controller {
     }
 
     private void treeItemSelectedAction(){
+        // Capabilities
         Device device = tree.getSelectionModel().getSelectedItem().getValue();
         capabilitiesList = FXCollections.observableArrayList();
         if(device.getCapabilities()!=null){
@@ -103,6 +103,15 @@ public class Controller {
             }
         }
         capabilitiesListView.setItems(capabilitiesList);
+        // Configuration
+        configurationList = FXCollections.observableArrayList();
+        if(device.getConfiguration()!=null){
+            for (String key:
+                    device.getConfiguration().keySet()) {
+                configurationList.add(key+": "+device.getConfiguration().get(key)+'\n');
+            }
+        }
+        configurationListView.setItems(configurationList);
     }
 
     private void bindOrUnbindButtonAction(String action){

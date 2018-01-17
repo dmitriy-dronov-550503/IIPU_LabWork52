@@ -77,9 +77,7 @@ public class DeviceManager {
 
 
 
-
-
-
+    
     private String getUSBModalias(String devicePath, String deviceNumber) {
         String modaliasFile = devicePath + "/" + deviceNumber + ":1.0/modalias";
         if (deviceNumber.contains("usb")) {
