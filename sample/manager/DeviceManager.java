@@ -72,45 +72,6 @@ public class DeviceManager {
             }
         }
     }
-
-
-
-
-
     
-    private String getUSBModalias(String devicePath, String deviceNumber) {
-        String modaliasFile = devicePath + "/" + deviceNumber + ":1.0/modalias";
-        if (deviceNumber.contains("usb")) {
-            modaliasFile = devicePath + "/" + deviceNumber.replace("usb", "") + "-0:1.0/modalias";
-        }
-        try (BufferedReader reader = new BufferedReader(new FileReader(modaliasFile))) {
-            return reader.readLine();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    private String getDriverLocation(String modalias) {
-        return getOutputLine("/sbin/modinfo", "-n", modalias);
-    }
-
-    private String getDriverInfo(String modalias) {
-        return getOutputLine("/sbin/modinfo", "-d", modalias);
-    }
-
-    private String getDriverAuthor(String modalias) {
-        return getOutputLine("/sbin/modinfo", "-a", modalias);
-    }
-
-    private String getOutputLine(String... params) {
-        try {
-            Process findProcess = Runtime.getRuntime().exec(params);
-            BufferedReader br = new BufferedReader(new InputStreamReader(findProcess.getInputStream()));
-            return br.readLine();
-        } catch (Exception e1) {
-            e1.printStackTrace();
-            return null;
-        }
-    }
 
 }
