@@ -44,11 +44,14 @@ public class Controller {
     }
 
     Parent getRoot(){
+        Label capLabel = new Label("Capabilities:");
         capabilitiesListView.setItems(capabilitiesList);
+        Label confLabel = new Label("Configuration:");
         configurationListView.setItems(configurationList);
 
         VBox additionalPanel = new VBox();
-        additionalPanel.getChildren().addAll(capabilitiesListView, configurationListView);
+        additionalPanel.getChildren().addAll(capLabel,capabilitiesListView,
+                confLabel, configurationListView);
 
         HBox bottomPanel = new HBox();
         bottomPanel.setSpacing(4.0);
