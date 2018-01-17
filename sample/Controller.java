@@ -4,27 +4,38 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.*;
 import sample.model.Device;
-import sample.model.LSHWDevice;
-
-import javax.swing.*;
 
 public class Controller {
 
-    AnchorPane root = new AnchorPane();
+    BorderPane root = new BorderPane();
     private Button unbindButton = new Button("Unbind");
     private Button bindButton = new Button("Bind");
     sample.manager.DeviceManager dm = new sample.manager.DeviceManager();
-    final ObservableList<Device> data = FXCollections.observableArrayList(dm.findDevices());
-    private TreeView<LSHWDevice> tree = new TreeView<>(dm.getRoot().getChildren().get(0));
+    private TreeView<Device> tree = new TreeView<>(dm.getRoot().getChildren().get(0));
+    private ListView<String> capabilitiesListView = new ListView<>();
+    private ListView<String> configurationListView = new ListView<>();
+    private ObservableList<String> capabilitiesList;
+    private ObservableList<String> configurationList;
 
     void init(){
-        tree.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tree.setOnKeyPressed(e -> treeItemSelectedAction());
+        tree.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                if(mouseEvent.getButton().equals(MouseButton.PRIMARY)){
+                        treeItemSelectedAction();
+                }
+            }
+        });
         initUnbindButton();
         initBindButton();
     }
@@ -34,119 +45,81 @@ public class Controller {
     }
 
     Parent getRoot(){
+        capabilitiesListView.setItems(capabilitiesList);
+        configurationListView.setItems(configurationList);
+
+        VBox additionalPanel = new VBox();
+        additionalPanel.getChildren().addAll(capabilitiesListView, configurationListView);
+
         HBox bottomPanel = new HBox();
-        AnchorPane.setBottomAnchor(bottomPanel, 0.0);
         bottomPanel.setSpacing(4.0);
         bottomPanel.getChildren().addAll(unbindButton, bindButton);
 
-        AnchorPane.setBottomAnchor(tree, 26.0);
-        AnchorPane.setLeftAnchor(tree,0.0);
-        AnchorPane.setRightAnchor(tree, 0.0);
-        AnchorPane.setTopAnchor(tree,0.0);
+        BorderPane.setAlignment(tree, Pos.CENTER);
+        BorderPane.setMargin(tree, new Insets(5,5,5,5));
+        root.setCenter(tree);
+        BorderPane.setAlignment(additionalPanel, Pos.CENTER_RIGHT);
+        BorderPane.setMargin(additionalPanel, new Insets(5,5,5,5));
+        root.setRight(additionalPanel);
+        root.setBottom(bottomPanel);
 
-        root.getChildren().addAll(tree, bottomPanel);
         return root;
+
+        /*
+        AnchorPane.setBottomAnchor(topPanel, 26.0);
+        AnchorPane.setLeftAnchor(topPanel,0.0);
+        AnchorPane.setRightAnchor(topPanel, 0.0);
+        AnchorPane.setTopAnchor(topPanel,0.0);
+
+        root.getChildren().addAll(topPanel, bottomPanel);
+        return root;*/
     }
 
-    void initUnbindButton(){
+    private void initUnbindButton(){
         unbindButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                for (TreeItem<LSHWDevice> item:
-                     tree.getSelectionModel().getSelectedItems()) {
-                    String slot = item.getValue().getSlot();
-                    String path = item.getValue().getDriverPath();
-                    String command = "echo "+slot+" | tee -a "+path+"/unbind";
-                    System.out.println(command);
-                    try {
-                        SudoExecutor.exec("unbind",command);
-                    }
-                    catch (Exception ex){
-                        ex.printStackTrace();
-                    }
-                }
+                bindOrUnbindButtonAction("unbind");
             }
         });
     }
 
-    void initBindButton(){
+    private void initBindButton(){
         bindButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                for (TreeItem<LSHWDevice> item:
-                        tree.getSelectionModel().getSelectedItems()) {
-                    String slot = item.getValue().getSlot();
-                    String path = item.getValue().getDriverPath();
-                    String command = "echo "+slot+" | tee -a "+path+"/bind";
-                    System.out.println(command);
-                    try {
-                        SudoExecutor.exec("bind",command);
-                    }
-                    catch (Exception ex){
-                        ex.printStackTrace();
-                    }
-                }
+                bindOrUnbindButtonAction("bind");
             }
         });
     }
 
-    /*
-    void parseCommand() throws Exception{
-        Process p = Runtime.getRuntime().exec("lspci -vmm -k");
-        BufferedReader br = new BufferedReader(new InputStreamReader(
-                p.getInputStream()));
-        int returnCode = p.waitFor();
-        if (returnCode >= 2) {
-            System.out.println("OS Error: Unable to Find File or other OS error.");
+    private void treeItemSelectedAction(){
+        Device device = tree.getSelectionModel().getSelectedItem().getValue();
+        capabilitiesList = FXCollections.observableArrayList();
+        if(device.getCapabilities()!=null){
+            for (String key:
+                    device.getCapabilities().keySet()) {
+                capabilitiesList.add(key+": "+device.getCapabilities().get(key)+'\n');
+            }
         }
+        capabilitiesListView.setItems(capabilitiesList);
+    }
 
-        Device device = new Device();
-        while (br.ready()) {
-            String line = br.readLine();
-            int matchIndex = line.indexOf("Slot:");
-            if (matchIndex != -1) {
-                line = line.substring(matchIndex + "Slot:".length()).trim();
-                device.setSlot(line);
-                continue;
+    private void bindOrUnbindButtonAction(String action){
+        for (TreeItem<Device> item:
+                tree.getSelectionModel().getSelectedItems()) {
+            String slot = item.getValue().getSlot();
+            String path = item.getValue().getDriverPath();
+            String command = "echo "+slot+" | tee -a "+path+"/"+action;
+            System.out.println(command);
+            try {
+                SudoExecutor.exec(action,command);
             }
-            matchIndex = line.indexOf("Class:");
-            if (matchIndex != -1) {
-                line = line.substring(matchIndex + "Class:".length()).trim();
-                device.setClassName(line);
-                continue;
-            }
-            matchIndex = line.indexOf("Vendor:");
-            if (matchIndex != -1) {
-                line = line.substring(matchIndex + "Vendor:".length()).trim();
-                device.setVendor(line);
-                continue;
-            }
-            matchIndex = line.indexOf("Device:");
-            if (matchIndex != -1) {
-                line = line.substring(matchIndex + "Device:".length()).trim();
-                device.setName(line);
-                continue;
-            }
-            matchIndex = line.indexOf("Driver:");
-            if (matchIndex != -1) {
-                line = line.substring(matchIndex + "Driver:".length()).trim();
-                device.setPath("/sys/bus/pci/drivers/"+line);
-                continue;
-            }
-            matchIndex = line.indexOf("Module:");
-            if (matchIndex != -1 && device.getDevicePath().isEmpty()) {
-                line = line.substring(matchIndex + "Module:".length()).trim();
-                device.setPath("/sys/bus/pci/drivers/"+line);
-                continue;
-            }
-
-            if(line.equals("")){
-                data.add(device);
-                device = new Device();
+            catch (Exception ex){
+                ex.printStackTrace();
             }
         }
     }
-*/
 
 
 }

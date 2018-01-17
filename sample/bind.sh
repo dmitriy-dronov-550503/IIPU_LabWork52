@@ -1,1 +1,1 @@
-echo 3:0:0:0 | tee -a /sys/bus/scsi/drivers/sr/bind
+echo 0000:00:03.0 | tee -a /sys/bus/pci/drivers/e1000/bind

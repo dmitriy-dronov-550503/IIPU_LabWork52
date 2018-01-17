@@ -3,7 +3,7 @@ package sample.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class LSHWConfiguration {
+public class DeviceConfiguration {
     private String driver;
     private String modalias;
 
