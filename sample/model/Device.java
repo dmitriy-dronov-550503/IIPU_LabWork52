@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Device {
+    private String GUID;
     private String id;
     private String handle;
     private String description;
@@ -29,16 +31,22 @@ public class Device {
     }
 
     private String deviceClass;
+
     public String getDeviceClass() {
-        return deviceClass;
+        return deviceClass==null?"Not available":deviceClass;
     }
 
     public void setClass(String deviceClass) {
         this.deviceClass = deviceClass;
     }
 
+    public String getGUID(){
+        GUID = UUID.randomUUID().toString();
+        return GUID;
+    }
+
     public String getId() {
-        return id;
+        return id==null?"Not available":id;
     }
 
     public void setId(String id) {
@@ -46,7 +54,7 @@ public class Device {
     }
 
     public String getHandle() {
-        return handle;
+        return handle==null?"Not available":handle;
     }
 
     public void setHandle(String handle) {
@@ -54,7 +62,7 @@ public class Device {
     }
 
     public String getBusinfo() {
-        return businfo;
+        return businfo==null?"Not available":businfo;
     }
 
     public void setBusinfo(String businfo) {
@@ -62,7 +70,7 @@ public class Device {
     }
 
     public String getSerial() {
-        return serial;
+        return serial==null?"Not available":serial;
     }
 
     public void setSerial(String serial) {
@@ -70,7 +78,7 @@ public class Device {
     }
 
     public String getProduct() {
-        return product;
+        return product==null?"Not available":product;
     }
 
     public void setProduct(String product) {
@@ -78,7 +86,7 @@ public class Device {
     }
 
     public String getVendor() {
-        return vendor;
+        return vendor==null?"Not available":vendor;
     }
 
     public void setVendor(String vendor) {
@@ -106,7 +114,7 @@ public class Device {
     }
 
     public String getDescription() {
-        return description;
+        return description==null?"Not available":description;
     }
 
     public void setDescription(String description) {
@@ -145,14 +153,22 @@ public class Device {
         return businfo;
     }
 
+    public String getHardwareID(){
+        return getDeviceClass() + "/" +
+                getId() + "/" +
+                getBusinfo();
+    }
+
     @Override
     public String toString() {
-        return (deviceClass==null?"":deviceClass+" | ") +
-                (id==null?"":id+" | ") +
-                (businfo==null?"":businfo+" | ") +
-                (description==null?"":description+" | ") +
-                (product==null?"":product+" | ") +
-                (vendor==null?"":vendor)
+        return  getDeviceClass() + " | " +
+                getId() + " | " +
+                getBusinfo() + " | " +
+                getVendor() + " | " +
+                getProduct() +" | " +
+                getDriverPath() + " | " +
+                getGUID() + " | " +
+                getDescription()
                 ;
     }
 }

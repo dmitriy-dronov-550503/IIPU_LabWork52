@@ -21,9 +21,9 @@ public class Controller {
     sample.manager.DeviceManager dm = new sample.manager.DeviceManager();
     private TreeView<Device> tree = new TreeView<>(dm.getRoot().getChildren().get(0));
     private ListView<String> capabilitiesListView = new ListView<>();
-    private ListView<String> configurationListView = new ListView<>();
+    private ListView<String> infoListView = new ListView<>();
     private ObservableList<String> capabilitiesList;
-    private ObservableList<String> configurationList;
+    private ObservableList<String> infoList;
 
     void init(){
         tree.setOnKeyReleased(e -> treeItemSelectedAction());
@@ -46,12 +46,12 @@ public class Controller {
     Parent getRoot(){
         Label capLabel = new Label("Capabilities:");
         capabilitiesListView.setItems(capabilitiesList);
-        Label confLabel = new Label("Configuration:");
-        configurationListView.setItems(configurationList);
+        Label confLabel = new Label("Information:");
+        infoListView.setItems(infoList);
 
         VBox additionalPanel = new VBox();
         additionalPanel.getChildren().addAll(capLabel,capabilitiesListView,
-                confLabel, configurationListView);
+                confLabel, infoListView);
 
         HBox bottomPanel = new HBox();
         bottomPanel.setSpacing(4.0);
@@ -87,6 +87,14 @@ public class Controller {
     }
 
     private void treeItemSelectedAction(){
+        try {
+            treeItemSelected();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void treeItemSelected() throws Exception{
         // Capabilities
         Device device = tree.getSelectionModel().getSelectedItem().getValue();
         capabilitiesList = FXCollections.observableArrayList();
@@ -97,15 +105,15 @@ public class Controller {
             }
         }
         capabilitiesListView.setItems(capabilitiesList);
-        // Configuration
-        configurationList = FXCollections.observableArrayList();
-        if(device.getConfiguration()!=null){
-            for (String key:
-                    device.getConfiguration().keySet()) {
-                configurationList.add(key+": "+device.getConfiguration().get(key)+'\n');
-            }
-        }
-        configurationListView.setItems(configurationList);
+        // Information
+        infoList = FXCollections.observableArrayList();
+        infoList.add("HardwareID: " + device.getHardwareID());
+        infoList.add("Manufacturer: " + device.getVendor());
+        infoList.add("Provider: " + device.getProduct());
+        infoList.add("Driver path: " + device.getDriverPath());
+        infoList.add("GUID: " + device.getGUID());
+        infoList.add("Description: " + device.getDescription());
+        infoListView.setItems(infoList);
     }
 
     private void bindOrUnbindButtonAction(String action){
