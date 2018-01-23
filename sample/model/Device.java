@@ -161,14 +161,13 @@ public class Device {
 
     @Override
     public String toString() {
-        return  getDeviceClass() + " | " +
-                getId() + " | " +
-                getBusinfo() + " | " +
-                getVendor() + " | " +
-                getProduct() +" | " +
-                getDriverPath() + " | " +
-                getGUID() + " | " +
-                getDescription()
+        return  (deviceClass==null?"":deviceClass+" | ") +
+                (id==null?"":id+" | ") +
+                (businfo==null?"":businfo+" | ") +
+                (vendor==null?"":vendor+" | ") +
+                (product==null?"":product+" | ") +
+                (getDriverPath()==null?"":getDriverPath()+" | ") +
+                (description==null?"":description)
                 ;
     }
 }
